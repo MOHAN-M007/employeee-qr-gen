@@ -22,7 +22,7 @@ class BarcodeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'She Software Solutions',
+      title: 'Employee Details App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const _AuthGate(),

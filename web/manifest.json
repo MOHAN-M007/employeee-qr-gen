@@ -1,11 +1,11 @@
 {
-    "name": "sss_barcode_id_generator",
-    "short_name": "sss_barcode_id_generator",
+    "name": "Employee Details App",
+    "short_name": "EmployeeDetails",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Employee details & ID card generator.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
