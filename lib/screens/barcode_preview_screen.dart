@@ -232,6 +232,9 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
 }
 
 class _PremiumIdCard extends StatelessWidget {
+  static const double cardWidth = 340;
+  static const double cardHeight = 520;
+
   final String name;
   final String role;
   final String email;
@@ -261,10 +264,10 @@ class _PremiumIdCard extends StatelessWidget {
     final hasBytes = imageBytes != null && imageBytes!.isNotEmpty;
     final hasUrl = imageUrl != null && imageUrl!.isNotEmpty;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+    return SizedBox(
+      width: cardWidth,
+      height: cardHeight,
       child: Container(
-        width: 340,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
@@ -279,133 +282,140 @@ class _PremiumIdCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            // Layer 1: screenshot-friendly "glassy" background (no BackdropFilter)
-            // BackdropFilter can export as black on some Android GPUs when captured.
-            ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withOpacity(0.92),
-                      theme.colorScheme.primary.withOpacity(0.10),
-                      Colors.white.withOpacity(0.86),
-                    ],
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Layer 1: background (fixed-size -> export and preview match)
+              Positioned.fill(
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withOpacity(0.92),
+                          theme.colorScheme.primary.withOpacity(0.10),
+                          Colors.white.withOpacity(0.86),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(color: Colors.white.withOpacity(0.20)),
-
-            // Layer 3: watermark logo (behind content)
-            Positioned(
-              left: 16,
-              right: 16,
-              top: 80,
-              bottom: 120,
-              child: Opacity(
-                opacity: 0.06,
-                child: Image.asset("assets/logo.png", fit: BoxFit.contain),
+              Positioned.fill(
+                child: ColoredBox(color: Colors.white.withOpacity(0.20)),
               ),
-            ),
 
-            // Layer 2: content
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          color: theme.colorScheme.primary.withOpacity(0.08),
-                          child: Image.asset(
-                            "assets/logo.png",
-                            fit: BoxFit.cover,
+              // Layer 2: watermark logo (behind content)
+              Positioned(
+                left: 16,
+                right: 16,
+                top: 80,
+                bottom: 120,
+                child: Opacity(
+                  opacity: 0.06,
+                  child: Image.asset("assets/logo.png", fit: BoxFit.contain),
+                ),
+              ),
+
+              // Layer 3: content
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            color: theme.colorScheme.primary.withOpacity(0.08),
+                            child: Image.asset(
+                              "assets/logo.png",
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "She Software Solutions",
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            "She Software Solutions",
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    ClipOval(
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        color: Colors.black.withOpacity(0.05),
+                        child: (!hasBytes && !hasUrl && photoFile == null)
+                            ? const Icon(Icons.person, size: 64)
+                            : (hasBytes
+                                  ? Image.memory(imageBytes!, fit: BoxFit.cover)
+                                  : (hasUrl
+                                        ? Image.network(
+                                            imageUrl!,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Image.file(
+                                            photoFile!,
+                                            fit: BoxFit.cover,
+                                          ))),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  ClipOval(
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      color: Colors.black.withOpacity(0.05),
-                      child: (!hasBytes && !hasUrl && photoFile == null)
-                          ? const Icon(Icons.person, size: 64)
-                          : (hasBytes
-                                ? Image.memory(imageBytes!, fit: BoxFit.cover)
-                                : (hasUrl
-                                      ? Image.network(
-                                          imageUrl!,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Image.file(
-                                          photoFile!,
-                                          fit: BoxFit.cover,
-                                        ))),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
+                    const SizedBox(height: 14),
+                    Text(
+                      name,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    role,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black.withOpacity(0.6),
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 4),
+                    Text(
+                      role,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.black.withOpacity(0.6),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  _DetailRow(label: "DOB", value: dob),
-                  _DetailRow(label: "Email", value: email),
-                  _DetailRow(label: "Phone", value: phone),
-                  _DetailRow(label: "Employee ID", value: employeeId),
-                  const SizedBox(height: 16),
-                  BarcodeWidget(
-                    barcode: Barcode.code128(),
-                    data: employeeId,
-                    drawText: false,
-                    width: 280,
-                    height: 74,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    employeeId,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.black.withOpacity(0.7),
-                      letterSpacing: 0.4,
+                    const SizedBox(height: 14),
+                    _DetailRow(label: "DOB", value: dob),
+                    _DetailRow(label: "Email", value: email),
+                    _DetailRow(label: "Phone", value: phone),
+                    _DetailRow(label: "Employee ID", value: employeeId),
+                    const Spacer(),
+                    BarcodeWidget(
+                      barcode: Barcode.code128(),
+                      data: employeeId,
+                      drawText: false,
+                      width: 280,
+                      height: 74,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 6),
+                    Text(
+                      employeeId,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.black.withOpacity(0.7),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
