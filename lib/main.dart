@@ -49,7 +49,7 @@ class _AuthGateState extends State<_AuthGate> {
   Future<String?> _loadRole() async {
     final user = AuthService.currentUser;
     if (user?.email == null) return null;
-    return UserService.getUserRole(user!.email!);
+    return UserService.getUserRole(user!.email!.trim().toLowerCase());
   }
 
   @override

@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> login() async {
     setState(() => isLoading = true);
 
-    final email = emailController.text.trim();
+    final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
 
     final user = await AuthService.login(email, password);
@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> register() async {
     setState(() => isLoading = true);
 
-    final email = emailController.text.trim();
+    final email = emailController.text.trim().toLowerCase();
     final password = passwordController.text.trim();
 
     if (password.length < 6) {
