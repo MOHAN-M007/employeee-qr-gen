@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "592895213688",
+    "project_id": "sss-barcode-generator",
+    "storage_bucket": "sss-barcode-generator.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592895213688:android:fd2138917298827866ad8d",
+        "android_client_info": {
+          "package_name": "com.example.temp_fix_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxF-F9fqIJQ94wC73GiuPSmDKhy6l1Rsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592895213688:android:7f107e21c2e6d78466ad8d",
+        "android_client_info": {
+          "package_name": "com.sss_barcode_id_generator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxF-F9fqIJQ94wC73GiuPSmDKhy6l1Rsc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
