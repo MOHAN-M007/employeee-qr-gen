@@ -49,6 +49,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
       final doc = <String, dynamic>{
         "id": widget.employeeData["employeeId"],
         "employeeId": widget.employeeData["employeeId"],
+        "empCode6": widget.employeeData["empCode6"],
         "name": widget.employeeData["name"],
         "role": widget.employeeData["role"],
         "email": widget.employeeData["email"],
@@ -117,6 +118,19 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
       }
     }
 
+    String formatDob(String raw) {
+      if (raw.trim().isEmpty) return raw;
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) {
+        final d = DateUtils.dateOnly(parsed);
+        return "${d.day.toString().padLeft(2, "0")}/"
+            "${d.month.toString().padLeft(2, "0")}/"
+            "${d.year}";
+      }
+      // If already like DD/MM/YYYY, keep as-is.
+      return raw.split(" ").first;
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("ID Card Preview")),
       body: SafeArea(
@@ -132,7 +146,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
                     role: role,
                     email: email,
                     phone: phone,
-                    dob: dob,
+                    dob: formatDob(dob),
                     employeeId: employeeId,
                     imagePath: imagePath.isEmpty ? null : imagePath,
                     imageBytes: imageBytes,
@@ -251,7 +265,7 @@ class _PremiumIdCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(999),
             child: Container(
               width: 140,
               height: 140,

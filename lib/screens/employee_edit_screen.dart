@@ -33,6 +33,27 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
 
   bool saving = false;
 
+  String _toIsoDateOnly(DateTime date) {
+    final d = DateUtils.dateOnly(date);
+    return "${d.year.toString().padLeft(4, "0")}-"
+        "${d.month.toString().padLeft(2, "0")}-"
+        "${d.day.toString().padLeft(2, "0")}";
+  }
+
+  String _buildEmployeeId({required String role, required String code6}) {
+    final roleToken =
+        role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final safeRole = roleToken.isEmpty ? "EMP" : roleToken;
+    return "SSS$safeRole$code6";
+  }
+
+  String _deriveCode6FromExistingId(String employeeId) {
+    final match = RegExp(r"(\d{6})$").firstMatch(employeeId);
+    if (match != null) return match.group(1)!;
+    final n = DateTime.now().millisecondsSinceEpoch % 1000000;
+    return n.toString().padLeft(6, "0");
+  }
+
   @override
   void initState() {
     super.initState();
@@ -97,8 +118,15 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
     setState(() => saving = true);
 
     try {
-      final employeeId =
+      final existingEmployeeId =
           (widget.data["employeeId"] ?? widget.data["id"] ?? "").toString();
+      final code6 = (widget.data["empCode6"] ?? "").toString().trim().isNotEmpty
+          ? widget.data["empCode6"].toString()
+          : _deriveCode6FromExistingId(existingEmployeeId);
+      final newEmployeeId = _buildEmployeeId(
+        role: roleController.text.trim(),
+        code6: code6,
+      );
 
       String? imageBase64 = (widget.data["imageBase64"] ?? "").toString();
       if (selectedImage != null && await selectedImage!.exists()) {
@@ -106,11 +134,14 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
       }
 
       await FirestoreService.updateEmployee(widget.docId, {
+        "id": newEmployeeId,
+        "employeeId": newEmployeeId,
+        "empCode6": code6,
         "name": nameController.text.trim(),
         "role": roleController.text.trim(),
         "email": emailController.text.trim().toLowerCase(),
         "phone": phoneController.text.trim(),
-        "dob": DateUtils.dateOnly(dob!).toIso8601String(),
+        "dob": _toIsoDateOnly(dob!),
         "imageBase64": imageBase64.isEmpty ? null : imageBase64,
       });
 

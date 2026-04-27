@@ -57,9 +57,23 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
     setState(() => dob = picked);
   }
 
-  String _generateEmployeeId() {
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    return "EMP$ts";
+  String _generateEmployeeCode6() {
+    final n = DateTime.now().millisecondsSinceEpoch % 1000000;
+    return n.toString().padLeft(6, "0");
+  }
+
+  String _buildEmployeeId({required String role, required String code6}) {
+    final roleToken =
+        role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final safeRole = roleToken.isEmpty ? "EMP" : roleToken;
+    return "SSS$safeRole$code6";
+  }
+
+  String _toIsoDateOnly(DateTime date) {
+    final d = DateUtils.dateOnly(date);
+    return "${d.year.toString().padLeft(4, "0")}-"
+        "${d.month.toString().padLeft(2, "0")}-"
+        "${d.day.toString().padLeft(2, "0")}";
   }
 
   void submitForm() {
@@ -71,15 +85,20 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
       return;
     }
 
-    final employeeId = _generateEmployeeId();
+    final employeeCode6 = _generateEmployeeCode6();
+    final employeeId = _buildEmployeeId(
+      role: jobTitleController.text.trim(),
+      code6: employeeCode6,
+    );
     final payload = <String, dynamic>{
       "id": employeeId,
       "employeeId": employeeId,
+      "empCode6": employeeCode6,
       "name": nameController.text.trim(),
       "role": jobTitleController.text.trim(),
       "email": emailController.text.trim().toLowerCase(),
       "phone": phoneController.text.trim(),
-      "dob": DateUtils.dateOnly(dob!).toIso8601String(),
+      "dob": _toIsoDateOnly(dob!),
       "imagePath": selectedImage?.path,
     };
 
