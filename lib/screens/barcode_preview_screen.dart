@@ -9,7 +9,6 @@ import 'package:gal/gal.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../services/firestore_service.dart';
-import '../services/storage_service.dart';
 
 class BarcodePreviewScreen extends StatefulWidget {
   final Map<String, dynamic> employeeData;
@@ -30,23 +29,22 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
   bool saving = false;
   bool savedToFirestore = false;
 
+  Future<String?> _readImageBase64(String? path) async {
+    if (path == null || path.isEmpty) return null;
+    final file = File(path);
+    if (!await file.exists()) return null;
+    final bytes = await file.readAsBytes();
+    return base64Encode(bytes);
+  }
+
   Future<void> _saveToFirestore() async {
     if (!widget.allowSave) return;
     if (savedToFirestore) return;
     setState(() => saving = true);
 
     try {
-      String? imageUrl;
-      final imagePath = (widget.employeeData["imagePath"] ?? "").toString();
-      if (imagePath.isNotEmpty) {
-        final file = File(imagePath);
-        if (await file.exists()) {
-          imageUrl = await StorageService.uploadEmployeePhoto(
-            file: file,
-            employeeId: widget.employeeData["employeeId"].toString(),
-          );
-        }
-      }
+      // Spark plan friendly: store image as base64 in Firestore.
+      final imageBase64 = await _readImageBase64(widget.employeeData["imagePath"]);
 
       final doc = <String, dynamic>{
         "id": widget.employeeData["employeeId"],
@@ -56,7 +54,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
         "email": widget.employeeData["email"],
         "phone": widget.employeeData["phone"],
         "dob": widget.employeeData["dob"],
-        "imageUrl": imageUrl,
+        "imageBase64": imageBase64,
         "createdAt": FieldValue.serverTimestamp(),
         "timestamp": FieldValue.serverTimestamp(),
       };

@@ -34,7 +34,12 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 70,
+    );
     if (picked == null) return;
     setState(() => selectedImage = File(picked.path));
   }

@@ -6,7 +6,7 @@ This repository contains a Flutter + Firebase application for generating employe
 - Full Flutter source code (open in Android Studio)
 - Security rules files:
   - `firestore.rules` (employees write = admin-only)
-  - `storage.rules` (photo upload = admin-only)
+  - `storage.rules` (optional; only if you enable Firebase Storage)
 - A release APK (path after build): `build/app/outputs/flutter-apk/app-release.apk`
 
 ## Prerequisites (for reviewers)
@@ -15,7 +15,7 @@ This repository contains a Flutter + Firebase application for generating employe
 - Firebase project with:
   - Firebase Authentication enabled (Email/Password)
   - Cloud Firestore enabled
-  - Firebase Storage enabled
+  - Firebase Storage (optional; app works without it on Spark/free plan)
 
 ## Setup
 1) Open the project folder in Android Studio.
@@ -25,7 +25,7 @@ This repository contains a Flutter + Firebase application for generating employe
 
 ## Deploy security rules (recommended)
 - Firestore Rules: copy/paste `firestore.rules` into Firebase Console → Firestore → Rules.
-- Storage Rules: copy/paste `storage.rules` into Firebase Console → Storage → Rules.
+- Storage Rules: paste `storage.rules` into Firebase Console → Storage → Rules (only if Storage is enabled).
 
 ## Firestore schema
 ### `users` collection
@@ -36,7 +36,8 @@ This repository contains a Flutter + Firebase application for generating employe
 ### `employees` collection (created by admins)
 Common fields:
 - `employeeId`, `name`, `role`, `email`, `phone`, `dob`
-- `imageUrl` (optional)
+- `imageBase64` (optional; used on Spark/free plan)
+- `imageUrl` (optional/legacy; used only if Storage is enabled)
 - `createdAt` / `timestamp` (server timestamp)
 
 ## Test flow (recommended)

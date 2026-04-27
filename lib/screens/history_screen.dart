@@ -78,6 +78,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             "dob": data["dob"] ?? "",
             // If record has base64 image we pass it through as a temp field.
             "imageBase64": data["imageBase64"],
+            // Backward compatible: older records may have imageUrl.
             "imageUrl": data["imageUrl"],
             // keep imagePath empty so preview can still render.
             "imagePath": "",

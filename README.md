@@ -27,15 +27,15 @@ Stores employee records as `Map<String, dynamic>`:
   email,
   phone,
   dob,        // ISO-8601 string
-  imageUrl,   // optional (Firebase Storage download URL)
-  imageBase64 // optional (backward compatible)
+  imageBase64 // optional (photo stored in Firestore for Spark/free plan)
+  imageUrl,   // optional (legacy/optional if Storage is enabled)
   createdAt   // server timestamp
 }
 ```
 
 ## Security rules
 - Firestore rules: `firestore.rules` (employees write = admin-only)
-- Storage rules: `storage.rules` (photo upload = admin-only)
+- Storage rules: `storage.rules` (only needed if you enable Firebase Storage)
 
 ## Firebase setup notes
 - Android config is included: `android/app/google-services.json`

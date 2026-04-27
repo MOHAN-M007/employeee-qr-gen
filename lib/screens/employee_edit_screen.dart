@@ -1,10 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/firestore_service.dart';
-import '../services/storage_service.dart';
 
 class EmployeeEditScreen extends StatefulWidget {
   final String docId;
@@ -62,7 +62,12 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      maxHeight: 800,
+      imageQuality: 70,
+    );
     if (picked == null) return;
     setState(() => selectedImage = File(picked.path));
   }
@@ -95,12 +100,9 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
       final employeeId =
           (widget.data["employeeId"] ?? widget.data["id"] ?? "").toString();
 
-      String? imageUrl = (widget.data["imageUrl"] ?? "").toString();
+      String? imageBase64 = (widget.data["imageBase64"] ?? "").toString();
       if (selectedImage != null && await selectedImage!.exists()) {
-        imageUrl = await StorageService.uploadEmployeePhoto(
-          file: selectedImage!,
-          employeeId: employeeId,
-        );
+        imageBase64 = base64Encode(await selectedImage!.readAsBytes());
       }
 
       await FirestoreService.updateEmployee(widget.docId, {
@@ -109,7 +111,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
         "email": emailController.text.trim().toLowerCase(),
         "phone": phoneController.text.trim(),
         "dob": DateUtils.dateOnly(dob!).toIso8601String(),
-        "imageUrl": imageUrl.isEmpty ? null : imageUrl,
+        "imageBase64": imageBase64.isEmpty ? null : imageBase64,
       });
 
       if (!mounted) return;
@@ -127,11 +129,18 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
   @override
   Widget build(BuildContext context) {
     final existingUrl = (widget.data["imageUrl"] ?? "").toString();
+    final existingBase64 = (widget.data["imageBase64"] ?? "").toString();
     ImageProvider? avatar;
     if (selectedImage != null) {
       avatar = FileImage(selectedImage!);
     } else if (existingUrl.isNotEmpty) {
       avatar = NetworkImage(existingUrl);
+    } else if (existingBase64.isNotEmpty) {
+      try {
+        avatar = MemoryImage(base64Decode(existingBase64));
+      } catch (_) {
+        avatar = null;
+      }
     }
 
     return Scaffold(
