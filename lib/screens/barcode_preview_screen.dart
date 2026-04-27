@@ -30,6 +30,59 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
   bool saving = false;
   bool savedToFirestore = false;
 
+  String _formatDob(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return raw;
+
+    // Accept ISO, legacy "YYYY-MM-DDTHH:mm:ss", etc.
+    final parsed = DateTime.tryParse(trimmed);
+    if (parsed != null) {
+      final d = DateUtils.dateOnly(parsed);
+      return "${d.day.toString().padLeft(2, '0')}/"
+          "${d.month.toString().padLeft(2, '0')}/"
+          "${d.year}";
+    }
+
+    // If already like DD/MM/YYYY, keep date part only.
+    return trimmed.split(" ").first;
+  }
+
+  Uint8List? _decodeBase64ImageBytes(String s) {
+    final trimmed = s.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      return base64Decode(trimmed);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Widget _buildCardFromData() {
+    final data = widget.employeeData;
+
+    final name = (data["name"] ?? "").toString();
+    final role = (data["role"] ?? "").toString();
+    final email = (data["email"] ?? "").toString();
+    final phone = (data["phone"] ?? "").toString();
+    final dob = (data["dob"] ?? "").toString();
+    final employeeId = (data["employeeId"] ?? "").toString();
+    final imagePath = (data["imagePath"] ?? "").toString();
+    final imageBase64 = (data["imageBase64"] ?? "").toString();
+    final imageUrl = (data["imageUrl"] ?? "").toString();
+
+    return _PremiumIdCard(
+      name: name,
+      role: role,
+      email: email,
+      phone: phone,
+      dob: _formatDob(dob),
+      employeeId: employeeId,
+      imagePath: imagePath.isEmpty ? null : imagePath,
+      imageBytes: _decodeBase64ImageBytes(imageBase64),
+      imageUrl: imageUrl.isEmpty ? null : imageUrl,
+    );
+  }
+
   Future<String?> _readImageBase64(String? path) async {
     if (path == null || path.isEmpty) return null;
     final file = File(path);
@@ -81,11 +134,22 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
 
   Future<void> _exportToGallery() async {
     try {
-      final Uint8List? bytes = await screenshotController.capture(
+      // `BackdropFilter` / transparency can render incorrectly when exported as an image on some Android devices.
+      // Capture from an isolated widget tree with an explicit opaque background.
+      final bytes = await screenshotController.captureFromWidget(
+        Material(
+          color: Colors.white,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: _buildCardFromData(),
+            ),
+          ),
+        ),
+        context: context,
         delay: const Duration(milliseconds: 50),
-        pixelRatio: 2.5,
+        pixelRatio: 3,
       );
-      if (bytes == null) return;
       await Gal.putImageBytes(bytes, name: widget.employeeData["employeeId"]);
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -101,39 +165,6 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.employeeData;
-
-    final name = (data["name"] ?? "").toString();
-    final role = (data["role"] ?? "").toString();
-    final email = (data["email"] ?? "").toString();
-    final phone = (data["phone"] ?? "").toString();
-    final dob = (data["dob"] ?? "").toString();
-    final employeeId = (data["employeeId"] ?? "").toString();
-    final imagePath = (data["imagePath"] ?? "").toString();
-    final imageBase64 = (data["imageBase64"] ?? "").toString();
-    final imageUrl = (data["imageUrl"] ?? "").toString();
-    Uint8List? imageBytes;
-    if (imageBase64.isNotEmpty) {
-      try {
-        imageBytes = base64Decode(imageBase64);
-      } catch (_) {
-        imageBytes = null;
-      }
-    }
-
-    String formatDob(String raw) {
-      if (raw.trim().isEmpty) return raw;
-      final parsed = DateTime.tryParse(raw);
-      if (parsed != null) {
-        final d = DateUtils.dateOnly(parsed);
-        return "${d.day.toString().padLeft(2, '0')}/"
-            "${d.month.toString().padLeft(2, '0')}/"
-            "${d.year}";
-      }
-      // If already like DD/MM/YYYY, keep as-is.
-      return raw.split(" ").first;
-    }
-
     return Scaffold(
       appBar: AppBar(title: const Text("ID Card Preview")),
       body: SafeArea(
@@ -156,17 +187,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
                 children: [
                   Screenshot(
                     controller: screenshotController,
-                    child: _PremiumIdCard(
-                      name: name,
-                      role: role,
-                      email: email,
-                      phone: phone,
-                      dob: formatDob(dob),
-                      employeeId: employeeId,
-                      imagePath: imagePath.isEmpty ? null : imagePath,
-                      imageBytes: imageBytes,
-                      imageUrl: imageUrl.isEmpty ? null : imageUrl,
-                    ),
+                    child: _buildCardFromData(),
                   ),
                   const SizedBox(height: 16),
                   if (widget.allowSave) ...[
@@ -260,27 +281,25 @@ class _PremiumIdCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Layer 1: paint a background first (important for Screenshot export)
-            // so BackdropFilter has something to blur even inside a RepaintBoundary.
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.92),
-                    theme.colorScheme.primary.withOpacity(0.10),
-                    Colors.white.withOpacity(0.86),
-                  ],
+            // Layer 1: screenshot-friendly "glassy" background (no BackdropFilter)
+            // BackdropFilter can export as black on some Android GPUs when captured.
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.92),
+                      theme.colorScheme.primary.withOpacity(0.10),
+                      Colors.white.withOpacity(0.86),
+                    ],
+                  ),
                 ),
               ),
             ),
-
-            // Layer 2: glass blur overlay (now blurs the layer above, not the page)
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(color: Colors.white.withOpacity(0.22)),
-            ),
+            Container(color: Colors.white.withOpacity(0.20)),
 
             // Layer 3: watermark logo (behind content)
             Positioned(
