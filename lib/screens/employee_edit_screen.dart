@@ -33,16 +33,16 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
 
   bool saving = false;
 
-  String _toIsoDateOnly(DateTime date) {
+  String _toDobText(DateTime date) {
     final d = DateUtils.dateOnly(date);
-    return "${d.year.toString().padLeft(4, "0")}-"
-        "${d.month.toString().padLeft(2, "0")}-"
-        "${d.day.toString().padLeft(2, "0")}";
+    return "${d.day.toString().padLeft(2, '0')}/"
+        "${d.month.toString().padLeft(2, '0')}/"
+        "${d.year}";
   }
 
   String _buildEmployeeId({required String role, required String code6}) {
-    final roleToken =
-        role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final token = role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final roleToken = token.length > 10 ? token.substring(0, 10) : token;
     final safeRole = roleToken.isEmpty ? "EMP" : roleToken;
     return "SSS$safeRole$code6";
   }
@@ -51,25 +51,46 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
     final match = RegExp(r"(\d{6})$").firstMatch(employeeId);
     if (match != null) return match.group(1)!;
     final n = DateTime.now().millisecondsSinceEpoch % 1000000;
-    return n.toString().padLeft(6, "0");
+    return n.toString().padLeft(6, '0');
+  }
+
+  DateTime? _parseDob(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+
+    final iso = DateTime.tryParse(trimmed);
+    if (iso != null) return iso;
+
+    final parts = trimmed.split("/");
+    if (parts.length == 3) {
+      final dd = int.tryParse(parts[0]);
+      final mm = int.tryParse(parts[1]);
+      final yyyy = int.tryParse(parts[2]);
+      if (dd != null && mm != null && yyyy != null) {
+        return DateTime(yyyy, mm, dd);
+      }
+    }
+
+    return null;
   }
 
   @override
   void initState() {
     super.initState();
-    nameController =
-        TextEditingController(text: (widget.data["name"] ?? "").toString());
-    roleController =
-        TextEditingController(text: (widget.data["role"] ?? "").toString());
-    emailController =
-        TextEditingController(text: (widget.data["email"] ?? "").toString());
-    phoneController =
-        TextEditingController(text: (widget.data["phone"] ?? "").toString());
+    nameController = TextEditingController(
+      text: (widget.data["name"] ?? "").toString(),
+    );
+    roleController = TextEditingController(
+      text: (widget.data["role"] ?? "").toString(),
+    );
+    emailController = TextEditingController(
+      text: (widget.data["email"] ?? "").toString(),
+    );
+    phoneController = TextEditingController(
+      text: (widget.data["phone"] ?? "").toString(),
+    );
 
-    final rawDob = (widget.data["dob"] ?? "").toString();
-    if (rawDob.isNotEmpty) {
-      dob = DateTime.tryParse(rawDob);
-    }
+    dob = _parseDob((widget.data["dob"] ?? "").toString());
   }
 
   @override
@@ -141,7 +162,7 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
         "role": roleController.text.trim(),
         "email": emailController.text.trim().toLowerCase(),
         "phone": phoneController.text.trim(),
-        "dob": _toIsoDateOnly(dob!),
+        "dob": _toDobText(dob!),
         "imageBase64": imageBase64.isEmpty ? null : imageBase64,
       });
 
@@ -149,9 +170,9 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Update failed: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Update failed: $e")));
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -188,10 +209,9 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
                     children: [
                       CircleAvatar(
                         radius: 56,
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.12),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.12),
                         backgroundImage: avatar,
                         child: avatar == null
                             ? const Icon(Icons.person, size: 48)
@@ -271,9 +291,9 @@ class _EmployeeEditScreenState extends State<EmployeeEditScreen> {
                           child: Text(
                             dob == null
                                 ? "Select DOB"
-                                : "${dob!.day.toString().padLeft(2, "0")}/"
-                                    "${dob!.month.toString().padLeft(2, "0")}/"
-                                    "${dob!.year}",
+                                : "${dob!.day.toString().padLeft(2, '0')}/"
+                                      "${dob!.month.toString().padLeft(2, '0')}/"
+                                      "${dob!.year}",
                           ),
                         ),
                         const Icon(Icons.calendar_month),

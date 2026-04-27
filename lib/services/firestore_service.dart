@@ -10,6 +10,38 @@ class FirestoreService {
     await _employees.add(employee);
   }
 
+  // Prevent duplicate employees: use email (lowercase) as the document id.
+  // Returns true if this created a new record, false if it updated an existing one.
+  static Future<bool> upsertEmployeeByEmail(
+    Map<String, dynamic> employee,
+  ) async {
+    final email = (employee["email"] ?? "").toString().trim().toLowerCase();
+    if (email.isEmpty) {
+      throw ArgumentError("Employee email is required");
+    }
+
+    final ref = _employees.doc(email);
+    final snap = await ref.get();
+    final isNew = !snap.exists;
+
+    final payload = <String, dynamic>{
+      ...employee,
+      "email": email,
+      "timestamp": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
+    };
+
+    if (isNew) {
+      payload["createdAt"] = FieldValue.serverTimestamp();
+    } else {
+      // Don't let UI accidentally overwrite createdAt on updates.
+      payload.remove("createdAt");
+    }
+
+    await ref.set(payload, SetOptions(merge: true));
+    return isNew;
+  }
+
   static Stream<QuerySnapshot<Map<String, dynamic>>> getEmployees() {
     // Backward compatible: older records used `timestamp`.
     return _employees.orderBy("timestamp", descending: true).snapshots();

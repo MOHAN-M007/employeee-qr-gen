@@ -59,21 +59,21 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
 
   String _generateEmployeeCode6() {
     final n = DateTime.now().millisecondsSinceEpoch % 1000000;
-    return n.toString().padLeft(6, "0");
+    return n.toString().padLeft(6, '0');
   }
 
   String _buildEmployeeId({required String role, required String code6}) {
-    final roleToken =
-        role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final token = role.toUpperCase().replaceAll(RegExp(r"[^A-Z0-9]"), "");
+    final roleToken = token.length > 10 ? token.substring(0, 10) : token;
     final safeRole = roleToken.isEmpty ? "EMP" : roleToken;
     return "SSS$safeRole$code6";
   }
 
-  String _toIsoDateOnly(DateTime date) {
+  String _toDobText(DateTime date) {
     final d = DateUtils.dateOnly(date);
-    return "${d.year.toString().padLeft(4, "0")}-"
-        "${d.month.toString().padLeft(2, "0")}-"
-        "${d.day.toString().padLeft(2, "0")}";
+    return "${d.day.toString().padLeft(2, '0')}/"
+        "${d.month.toString().padLeft(2, '0')}/"
+        "${d.year}";
   }
 
   void submitForm() {
@@ -98,7 +98,7 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
       "role": jobTitleController.text.trim(),
       "email": emailController.text.trim().toLowerCase(),
       "phone": phoneController.text.trim(),
-      "dob": _toIsoDateOnly(dob!),
+      "dob": _toDobText(dob!),
       "imagePath": selectedImage?.path,
     };
 
@@ -126,8 +126,9 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
                     children: [
                       CircleAvatar(
                         radius: 56,
-                        backgroundImage:
-                            selectedImage != null ? FileImage(selectedImage!) : null,
+                        backgroundImage: selectedImage != null
+                            ? FileImage(selectedImage!)
+                            : null,
                         child: selectedImage == null
                             ? const Icon(Icons.person, size: 48)
                             : null,
@@ -210,9 +211,9 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
                           child: Text(
                             dob == null
                                 ? "Select DOB"
-                                : "${dob!.day.toString().padLeft(2, "0")}/"
-                                    "${dob!.month.toString().padLeft(2, "0")}/"
-                                    "${dob!.year}",
+                                : "${dob!.day.toString().padLeft(2, '0')}/"
+                                      "${dob!.month.toString().padLeft(2, '0')}/"
+                                      "${dob!.year}",
                           ),
                         ),
                         const Icon(Icons.calendar_month),
@@ -236,4 +237,3 @@ class _EmployeeFormScreenState extends State<EmployeeFormScreen> {
     );
   }
 }
-
