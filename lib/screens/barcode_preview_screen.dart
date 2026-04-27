@@ -260,25 +260,29 @@ class _PremiumIdCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Layer 1: glassy canvas
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withOpacity(0.85),
-                      theme.colorScheme.primary.withOpacity(0.08),
-                      Colors.white.withOpacity(0.70),
-                    ],
-                  ),
+            // Layer 1: paint a background first (important for Screenshot export)
+            // so BackdropFilter has something to blur even inside a RepaintBoundary.
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.92),
+                    theme.colorScheme.primary.withOpacity(0.10),
+                    Colors.white.withOpacity(0.86),
+                  ],
                 ),
               ),
             ),
 
-            // Layer 1.5: watermark logo (behind content)
+            // Layer 2: glass blur overlay (now blurs the layer above, not the page)
+            BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(color: Colors.white.withOpacity(0.22)),
+            ),
+
+            // Layer 3: watermark logo (behind content)
             Positioned(
               left: 16,
               right: 16,
