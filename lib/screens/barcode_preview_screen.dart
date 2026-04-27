@@ -9,6 +9,7 @@ import 'package:gal/gal.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../services/firestore_service.dart';
+import '../services/storage_service.dart';
 
 class BarcodePreviewScreen extends StatefulWidget {
   final Map<String, dynamic> employeeData;
@@ -29,21 +30,24 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
   bool saving = false;
   bool savedToFirestore = false;
 
-  Future<String?> _readImageBase64(String? path) async {
-    if (path == null || path.isEmpty) return null;
-    final file = File(path);
-    if (!await file.exists()) return null;
-    final bytes = await file.readAsBytes();
-    return base64Encode(bytes);
-  }
-
   Future<void> _saveToFirestore() async {
     if (!widget.allowSave) return;
     if (savedToFirestore) return;
     setState(() => saving = true);
 
     try {
-      final base64Image = await _readImageBase64(widget.employeeData["imagePath"]);
+      String? imageUrl;
+      final imagePath = (widget.employeeData["imagePath"] ?? "").toString();
+      if (imagePath.isNotEmpty) {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          imageUrl = await StorageService.uploadEmployeePhoto(
+            file: file,
+            employeeId: widget.employeeData["employeeId"].toString(),
+          );
+        }
+      }
+
       final doc = <String, dynamic>{
         "id": widget.employeeData["employeeId"],
         "employeeId": widget.employeeData["employeeId"],
@@ -52,7 +56,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
         "email": widget.employeeData["email"],
         "phone": widget.employeeData["phone"],
         "dob": widget.employeeData["dob"],
-        "imageBase64": base64Image,
+        "imageUrl": imageUrl,
         "createdAt": FieldValue.serverTimestamp(),
         "timestamp": FieldValue.serverTimestamp(),
       };
@@ -105,6 +109,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
     final employeeId = (data["employeeId"] ?? "").toString();
     final imagePath = (data["imagePath"] ?? "").toString();
     final imageBase64 = (data["imageBase64"] ?? "").toString();
+    final imageUrl = (data["imageUrl"] ?? "").toString();
     Uint8List? imageBytes;
     if (imageBase64.isNotEmpty) {
       try {
@@ -133,6 +138,7 @@ class _BarcodePreviewScreenState extends State<BarcodePreviewScreen> {
                     employeeId: employeeId,
                     imagePath: imagePath.isEmpty ? null : imagePath,
                     imageBytes: imageBytes,
+                    imageUrl: imageUrl.isEmpty ? null : imageUrl,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -181,6 +187,7 @@ class _PremiumIdCard extends StatelessWidget {
   final String employeeId;
   final String? imagePath;
   final Uint8List? imageBytes;
+  final String? imageUrl;
 
   const _PremiumIdCard({
     required this.name,
@@ -191,6 +198,7 @@ class _PremiumIdCard extends StatelessWidget {
     required this.employeeId,
     this.imagePath,
     this.imageBytes,
+    this.imageUrl,
   });
 
   @override
@@ -198,6 +206,7 @@ class _PremiumIdCard extends StatelessWidget {
     final theme = Theme.of(context);
     final photoFile = imagePath == null ? null : File(imagePath!);
     final hasBytes = imageBytes != null && imageBytes!.isNotEmpty;
+    final hasUrl = imageUrl != null && imageUrl!.isNotEmpty;
 
     return Container(
       width: 340,
@@ -246,11 +255,13 @@ class _PremiumIdCard extends StatelessWidget {
               width: 140,
               height: 140,
               color: Colors.black.withOpacity(0.05),
-              child: (!hasBytes && photoFile == null)
+              child: (!hasBytes && !hasUrl && photoFile == null)
                   ? const Icon(Icons.person, size: 64)
                   : (hasBytes
                       ? Image.memory(imageBytes!, fit: BoxFit.cover)
-                      : Image.file(photoFile!, fit: BoxFit.cover)),
+                      : (hasUrl
+                          ? Image.network(imageUrl!, fit: BoxFit.cover)
+                          : Image.file(photoFile!, fit: BoxFit.cover))),
             ),
           ),
           const SizedBox(height: 14),

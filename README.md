@@ -6,6 +6,7 @@ Flutter + Firebase app to generate premium employee ID cards with Code128 barcod
 ## Features
 - Email/password login (Firebase Auth)
 - Role-based access from Firestore `users` collection
+- Optional in-app account creation (for testing)
 - Admin: add employees, edit/delete records
 - User: read-only employee list
 - Premium vertical ID card preview + export to gallery
@@ -26,10 +27,21 @@ Stores employee records as `Map<String, dynamic>`:
   email,
   phone,
   dob,        // ISO-8601 string
-  imageBase64 // optional
+  imageUrl,   // optional (Firebase Storage download URL)
+  imageBase64 // optional (backward compatible)
   createdAt   // server timestamp
 }
 ```
+
+## Security rules
+- Firestore rules: `firestore.rules` (employees write = admin-only)
+- Storage rules: `storage.rules` (photo upload = admin-only)
+
+## Firebase setup notes
+- Android config is included: `android/app/google-services.json`
+- If you need iOS/macOS builds, add:
+  - `ios/Runner/GoogleService-Info.plist`
+  - `macos/Runner/GoogleService-Info.plist`
 
 ## Project structure
 ```
@@ -39,4 +51,3 @@ lib/
   services/
   widgets/
 ```
-

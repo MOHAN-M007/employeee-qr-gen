@@ -1,0 +1,25 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userEmail() {
+      return request.auth.token.email;
+    }
+
+    function isAdmin() {
+      return signedIn()
+          && firestore.exists(/databases/(default)/documents/users/$(userEmail()))
+          && firestore.get(/databases/(default)/documents/users/$(userEmail())).data.role == "admin";
+    }
+
+    // Employee photos uploaded by admins; readable by any authenticated user.
+    match /employee_photos/{fileName} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
+

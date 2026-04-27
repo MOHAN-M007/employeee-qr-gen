@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../services/firestore_service.dart';
 import 'barcode_preview_screen.dart';
+import 'employee_edit_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String userRole;
@@ -21,49 +22,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   bool get isAdmin => widget.userRole.trim().toLowerCase() == "admin";
 
-  void _showEditDialog({
+  Future<void> _openEdit({
     required String docId,
     required Map<String, dynamic> data,
-  }) {
-    final nameController = TextEditingController(text: (data["name"] ?? "").toString());
-    final roleController = TextEditingController(text: (data["role"] ?? "").toString());
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Edit Employee"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Name"),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: roleController,
-              decoration: const InputDecoration(labelText: "Role"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await FirestoreService.updateEmployee(docId, {
-                "name": nameController.text.trim(),
-                "role": roleController.text.trim(),
-              });
-              if (mounted) Navigator.pop(context);
-            },
-            child: const Text("Update"),
-          ),
-        ],
+  }) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmployeeEditScreen(docId: docId, data: data),
       ),
     );
+    if (updated == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Employee updated")),
+      );
+    }
   }
 
   void _confirmDelete(String docId) {
@@ -105,6 +78,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             "dob": data["dob"] ?? "",
             // If record has base64 image we pass it through as a temp field.
             "imageBase64": data["imageBase64"],
+            "imageUrl": data["imageUrl"],
             // keep imagePath empty so preview can still render.
             "imagePath": "",
           },
@@ -188,6 +162,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       final name = (data["name"] ?? "").toString();
                       final role = (data["role"] ?? "").toString();
                       final imgBytes = _decodeBase64(data["imageBase64"]);
+                      final imageUrl = (data["imageUrl"] ?? "").toString();
+                      ImageProvider? avatarImage;
+                      if (imageUrl.isNotEmpty) {
+                        avatarImage = NetworkImage(imageUrl);
+                      } else if (imgBytes != null) {
+                        avatarImage = MemoryImage(imgBytes);
+                      }
 
                       return Material(
                         color: Colors.white,
@@ -201,9 +182,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 .colorScheme
                                 .primary
                                 .withOpacity(0.12),
-                            backgroundImage:
-                                imgBytes == null ? null : MemoryImage(imgBytes),
-                            child: imgBytes == null
+                            backgroundImage: avatarImage,
+                            child: avatarImage == null
                                 ? const Icon(Icons.badge)
                                 : null,
                           ),
@@ -227,7 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   children: [
                                     IconButton(
                                       tooltip: "Edit",
-                                      onPressed: () => _showEditDialog(
+                                      onPressed: () => _openEdit(
                                         docId: doc.id,
                                         data: data,
                                       ),

@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userEmail() {
+      return request.auth.token.email;
+    }
+
+    function isAdmin() {
+      return signedIn()
+          && exists(/databases/$(database)/documents/users/$(userEmail()))
+          && get(/databases/$(database)/documents/users/$(userEmail())).data.role == "admin";
+    }
+
+    // Users collection: docId must equal the authenticated email.
+    match /users/{email} {
+      allow read: if signedIn() && userEmail() == email;
+
+      // Allow a user to create their own doc only with role="user".
+      allow create: if signedIn()
+          && userEmail() == email
+          && request.resource.data.keys().hasOnly(["role"])
+          && request.resource.data.role == "user";
+
+      // Only admins can promote or modify/delete users.
+      allow update, delete: if isAdmin();
+    }
+
+    // Employees: readable by any signed-in user; writable only by admins.
+    match /employees/{docId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
+

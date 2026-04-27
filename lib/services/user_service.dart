@@ -3,6 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserService {
   static final _db = FirebaseFirestore.instance;
 
+  static Future<void> ensureUserDoc(String email) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final ref = _db.collection("users").doc(cleanEmail);
+    final snap = await ref.get();
+    if (snap.exists) return;
+    await ref.set({"role": "user"});
+  }
+
   static Future<String> getUserRole(String email) async {
     try {
       final cleanEmail = email.trim().toLowerCase();
@@ -35,4 +43,3 @@ class UserService {
     }
   }
 }
-

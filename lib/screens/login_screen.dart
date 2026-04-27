@@ -35,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (user != null && user.email != null) {
+      await UserService.ensureUserDoc(user.email!);
       final role = await UserService.getUserRole(user.email!);
 
       if (!mounted) return;
@@ -48,6 +49,44 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login Failed")),
+      );
+    }
+
+    if (mounted) setState(() => isLoading = false);
+  }
+
+  Future<void> register() async {
+    setState(() => isLoading = true);
+
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (password.length < 6) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password must be at least 6 characters")),
+        );
+        setState(() => isLoading = false);
+      }
+      return;
+    }
+
+    final user = await AuthService.register(email, password);
+    if (!mounted) return;
+
+    if (user != null && user.email != null) {
+      await UserService.ensureUserDoc(user.email!);
+      final role = await UserService.getUserRole(user.email!);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardScreen(userRole: role.trim().toLowerCase()),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registration Failed")),
       );
     }
 
@@ -106,6 +145,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Text("Login"),
                 ),
               ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: isLoading ? null : register,
+                child: const Text("Create Account (User)"),
+              ),
             ],
           ),
         ),
@@ -113,4 +157,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
