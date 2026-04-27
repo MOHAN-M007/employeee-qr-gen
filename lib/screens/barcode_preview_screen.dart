@@ -228,14 +228,17 @@ class _PremiumIdCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  color: theme.colorScheme.primary.withOpacity(0.06),
+                  child: Image.asset(
+                    "assets/logo.png",
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Icon(Icons.business, color: theme.colorScheme.primary),
               ),
               const SizedBox(width: 10),
               Expanded(
